@@ -3,34 +3,216 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rental Mobil</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Aplikasi Sewa Kendaraan</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .table-container {
+            margin-top: 30px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+    </style>
 </head>
 <body>
-    <h1>Daftar Mobil untuk Disewa</h1>
-    <table>
-        <thead>
-            <tr>
-                <th>Nama Mobil</th>
-                <th>Merk</th>
-                <th>Tahun</th>
-                <th>Harga Sewa</th>
-                <th>Aksi</th>
-            </tr>
-        </thead>
-        <tbody id="car-list"></tbody>
-    </table>
+    <div class="container">
+        <h2>Aplikasi Sewa Kendaraan</h2>
+        
+        <form id="rentalForm">
+            <div class="form-group">
+                <label for="nama">Nama Penyewa:</label>
+                <input type="text" id="nama" required>
+            </div>
 
-    <h2>Tambah/Edit Mobil</h2>
-    <form id="car-form">
-        <input type="hidden" id="car-id">
-        <input type="text" id="car-name" placeholder="Nama Mobil" required>
-        <input type="text" id="car-brand" placeholder="Merk" required>
-        <input type="number" id="car-year" placeholder="Tahun" required>
-        <input type="number" id="car-price" placeholder="Harga Sewa" required>
-        <button type="submit">Simpan</button>
-    </form>
+            <div class="form-group">
+                <label for="ktp">Nomor KTP:</label>
+                <input type="text" id="ktp" required>
+            </div>
 
-    <script src="script.js"></script>
+            <div class="form-group">
+                <label for="telepon">Nomor Telepon:</label>
+                <input type="tel" id="telepon" required>
+            </div>
+
+            <div class="form-group">
+                <label for="kendaraan">Jenis Kendaraan:</label>
+                <select id="kendaraan" required>
+                    <option value="">Pilih Kendaraan</option>
+                    <option value="Motor">Motor</option>
+                    <option value="Mobil">Mobil</option>
+                    <option value="Bus">Bus</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="tanggalMulai">Tanggal Mulai:</label>
+                <input type="date" id="tanggalMulai" required>
+            </div>
+
+            <div class="form-group">
+                <label for="tanggalSelesai">Tanggal Selesai:</label>
+                <input type="date" id="tanggalSelesai" required>
+            </div>
+
+            <button type="submit">Submit Rental</button>
+        </form>
+
+        <div class="loading" id="loading">Loading...</div>
+
+        <div class="table-container">
+            <h3>Daftar Penyewaan</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nama</th>
+                        <th>KTP</th>
+                        <th>Telepon</th>
+                        <th>Kendaraan</th>
+                        <th>Tanggal Mulai</th>
+                        <th>Tanggal Selesai</th>
+                    </tr>
+                </thead>
+                <tbody id="rentalList">
+                    <!-- Data will be populated here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Replace with your Google Apps Script URL
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz-KiHbPKMdRsNueGxWAxqVgVlQlSYYQkn5ectQGoOvxv7fQaJXgGT-4kqF4jzQOQ0/exec';
+
+        document.getElementById('rentalForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const loading = document.getElementById('loading');
+            loading.style.display = 'block';
+
+            const formData = {
+                nama: document.getElementById('nama').value,
+                ktp: document.getElementById('ktp').value,
+                telepon: document.getElementById('telepon').value,
+                kendaraan: document.getElementById('kendaraan').value,
+                tanggalMulai: document.getElementById('tanggalMulai').value,
+                tanggalSelesai: document.getElementById('tanggalSelesai').value
+            };
+
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                alert('Data berhasil disimpan!');
+                document.getElementById('rentalForm').reset();
+                loadRentalData();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan saat menyimpan data');
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+
+        async function loadRentalData() {
+            const loading = document.getElementById('loading');
+            loading.style.display = 'block';
+
+            try {
+                const response = await fetch(SCRIPT_URL);
+                const data = await response.json();
+                
+                const tbody = document.getElementById('rentalList');
+                tbody.innerHTML = '';
+
+                data.forEach(rental => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${rental.nama}</td>
+                        <td>${rental.ktp}</td>
+                        <td>${rental.telepon}</td>
+                        <td>${rental.kendaraan}</td>
+                        <td>${rental.tanggalMulai}</td>
+                        <td>${rental.tanggalSelesai}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan saat memuat data');
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        // Load initial data
+        loadRentalData();
+    </script>
 </body>
 </html>
