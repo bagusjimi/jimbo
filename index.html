@@ -20,21 +20,69 @@
                 <th>Merk</th>
                 <th>Tahun</th>
                 <th>Harga Sewa</th>
+                <th>Aksi</th>
             </tr>
         </thead>
         <tbody id="car-list"></tbody>
     </table>
+
+    <h2>Tambah/Edit Mobil</h2>
+    <form id="car-form">
+        <input type="hidden" id="car-id">
+        <input type="text" id="car-name" placeholder="Nama Mobil" required>
+        <input type="text" id="car-brand" placeholder="Merk" required>
+        <input type="number" id="car-year" placeholder="Tahun" required>
+        <input type="number" id="car-price" placeholder="Harga Sewa" required>
+        <button type="submit">Simpan</button>
+    </form>
+
     <script>
         async function fetchCars() {
-            const response = await fetch('https://script.google.com/macros/s/AKfycbz-KiHbPKMdRsNueGxWAxqVgVlQlSYYQkn5ectQGoOvxv7fQaJXgGT-4kqF4jzQOQ0/exec');
+            const response = await fetch('https://script.google.com/macros/s/AKfycbz-KiHbPKMdRsNueGxWAxqVgVlQlSYYQkn5ectQGoOvxv7fQaJXgGT-4kqF4jzQOQ0/exec?action=read');
             const cars = await response.json();
             const carList = document.getElementById('car-list');
+            carList.innerHTML = '';
 
             cars.forEach(car => {
                 const row = document.createElement('tr');
-                row.innerHTML = `<td>${car.name}</td><td>${car.brand}</td><td>${car.year}</td><td>${car.price}</td>`;
+                row.innerHTML = `<td>${car.name}</td><td>${car.brand}</td><td>${car.year}</td><td>${car.price}</td>
+                                <td>
+                                    <button onclick="editCar(${car.id})">Edit</button>
+                                    <button onclick="deleteCar(${car.id})">Hapus</button>
+                                </td>`;
                 carList.appendChild(row);
             });
+        }
+
+        document.getElementById('car-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const id = document.getElementById('car-id').value;
+            const name = document.getElementById('car-name').value;
+            const brand = document.getElementById('car-brand').value;
+            const year = document.getElementById('car-year').value;
+            const price = document.getElementById('car-price').value;
+            const action = id ? 'update' : 'create';
+
+            await fetch(`https://script.google.com/macros/s/AKfycbz-KiHbPKMdRsNueGxWAxqVgVlQlSYYQkn5ectQGoOvxv7fQaJXgGT-4kqF4jzQOQ0/exec?action=${action}&id=${id}&name=${name}&brand=${brand}&year=${year}&price=${price}`, {
+                method: 'GET'
+            });
+
+            fetchCars();
+            document.getElementById('car-form').reset();
+        });
+
+        async function deleteCar(id) {
+            await fetch(`https://script.google.com/macros/s/AKfycbz-KiHbPKMdRsNueGxWAxqVgVlQlSYYQkn5ectQGoOvxv7fQaJXgGT-4kqF4jzQOQ0/exec?action=delete&id=${id}`, { method: 'GET' });
+            fetchCars();
+        }
+
+        function editCar(id) {
+            const row = document.getElementById('car-list').children[id];
+            document.getElementById('car-id').value = id;
+            document.getElementById('car-name').value = row.children[0].innerText;
+            document.getElementById('car-brand').value = row.children[1].innerText;
+            document.getElementById('car-year').value = row.children[2].innerText;
+            document.getElementById('car-price').value = row.children[3].innerText;
         }
 
         fetchCars();
