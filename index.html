@@ -82,13 +82,13 @@
         function editCar(button) {
             const id = button.getAttribute('data-id');
             const carList = document.getElementById('car-list');
-            const row = carList.querySelector(`tr:nth-child(${parseInt(id) + 1})`);
+            const row = carList.rows[id]; // Mengambil baris berdasarkan indeks
 
-            document.getElementById('car-id').value = id;
-            document.getElementById('car-name').value = row.children[0].innerText;
-            document.getElementById('car-brand').value = row.children[1].innerText;
-            document.getElementById('car-year').value = row.children[2].innerText;
-            document.getElementById('car-price').value = row.children[3].innerText;
+            document.getElementById('car-id').value = id; // Simpan ID ke dalam input tersembunyi
+            document.getElementById('car-name').value = row.cells[0].innerText; // Mengambil data dari kolom
+            document.getElementById('car-brand').value = row.cells[1].innerText;
+            document.getElementById('car-year').value = row.cells[2].innerText;
+            document.getElementById('car-price').value = row.cells[3].innerText;
         }
 
         fetchCars();
