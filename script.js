@@ -1,55 +1,98 @@
+       // Replace with your Google Apps Script URL
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz-KiHbPKMdRsNueGxWAxqVgVlQlSYYQkn5ectQGoOvxv7fQaJXgGT-4kqF4jzQOQ0/exec';
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbz-KiHbPKMdRsNueGxWAxqVgVlQlSYYQkn5ectQGoOvxv7fQaJXgGT-4kqF4jzQOQ0/exec';
+                function formatDate(isoString) {
+            if (!isoString) return '-';
+            const date = new Date(isoString);
+            return date.toLocaleDateString('id-ID', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+        }
 
-async function fetchCars() {
-    const response = await fetch(`${API_URL}?action=read`);
-    const cars = await response.json();
-    const carList = document.getElementById('car-list');
-    carList.innerHTML = '';
+        async function loadRentalData() {
+            const loading = document.getElementById('loading');
+            const tbody = document.getElementById('rentalList');
+            loading.style.display = 'block';
+            tbody.innerHTML = '';
 
-    cars.forEach((car, index) => {
-        const row = document.createElement('tr');
-        row.innerHTML = `<td>${car.name}</td><td>${car.brand}</td><td>${car.year}</td><td>${car.price}</td>
-                        <td>
-                            <button data-id="${index}" onclick="editCar(this)">Edit</button>
-                            <button data-id="${index}" onclick="deleteCar(${index})">Hapus</button>
-                        </td>`;
-        carList.appendChild(row);
-    });
-}
+            try {
+                const response = await fetch(SCRIPT_URL);
+                const data = await response.json();
+                
+                if (data && data.length > 0) {
+                    data.forEach(rental => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${rental.Nama || '-'}</td>
+                            <td>${rental.KTP || '-'}</td>
+                            <td>${rental.Telepon || '-'}</td>
+                            <td>${rental.Kendaraan || '-'}</td>
+                            <td>${formatDate(rental['Tanggal Mulai'])}</td>
+                            <td>${formatDate(rental['Tanggal Selesai'])}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                } else {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="empty-message">
+                                Belum ada data penyewaan
+                            </td>
+                        </tr>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="empty-message">
+                            Terjadi kesalahan saat memuat data
+                        </td>
+                    </tr>
+                `;
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
 
-document.getElementById('car-form').addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const id = document.getElementById('car-id').value;
-    const name = document.getElementById('car-name').value;
-    const brand = document.getElementById('car-brand').value;
-    const year = document.getElementById('car-year').value;
-    const price = document.getElementById('car-price').value;
-    const action = id ? 'update' : 'create';
+        // Handle form submit
+        document.getElementById('rentalForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const loading = document.getElementById('loading');
+            loading.style.display = 'block';
 
-    await fetch(`${API_URL}?action=${action}&id=${id}&name=${name}&brand=${brand}&year=${year}&price=${price}`, {
-        method: 'GET'
-    });
+            const formData = {
+                Nama: document.getElementById('nama').value.trim(),
+                KTP: document.getElementById('ktp').value.trim(),
+                Telepon: document.getElementById('telepon').value.trim(),
+                Kendaraan: document.getElementById('kendaraan').value,
+                'Tanggal Mulai': document.getElementById('tanggalMulai').value,
+                'Tanggal Selesai': document.getElementById('tanggalSelesai').value
+            };
 
-    fetchCars();
-    document.getElementById('car-form').reset();
-});
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
 
-async function deleteCar(id) {
-    await fetch(`${API_URL}?action=delete&id=${id}`, { method: 'GET' });
-    fetchCars();
-}
+                alert('Data berhasil disimpan!');
+                document.getElementById('rentalForm').reset();
+                setTimeout(loadRentalData, 1000);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan saat menyimpan data');
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
 
-function editCar(button) {
-    const id = button.getAttribute('data-id');
-    const carList = document.getElementById('car-list');
-    const row = carList.rows[id];
-
-    document.getElementById('car-id').value = id;
-    document.getElementById('car-name').value = row.cells[0].innerText;
-    document.getElementById('car-brand').value = row.cells[1].innerText;
-    document.getElementById('car-year').value = row.cells[2].innerText;
-    document.getElementById('car-price').value = row.cells[3].innerText;
-}
-
-fetchCars();
+        // Load initial data
+        loadRentalData();
