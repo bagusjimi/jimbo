@@ -38,7 +38,7 @@
 
     <script>
     async function fetchCars() {
-        const response = await fetch('URL_GOOGLE_APPS_SCRIPT?action=read');
+        const response = await fetch('https://script.google.com/macros/s/AKfycbz-KiHbPKMdRsNueGxWAxqVgVlQlSYYQkn5ectQGoOvxv7fQaJXgGT-4kqF4jzQOQ0/exec?action=read');
         const cars = await response.json();
         const carList = document.getElementById('car-list');
         carList.innerHTML = '';
