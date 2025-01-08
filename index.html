@@ -13,18 +13,18 @@
 </head>
 <body>
     <h1>Daftar Mobil untuk Disewa</h1>
-    <table>
-        <thead>
-            <tr>
-                <th>Nama Mobil</th>
-                <th>Merk</th>
-                <th>Tahun</th>
-                <th>Harga Sewa</th>
-                <th>Aksi</th>
-            </tr>
-        </thead>
-        <tbody id="car-list"></tbody>
-    </table>
+<table>
+    <thead>
+        <tr>
+            <th>Nama Mobil</th>
+            <th>Merk</th>
+            <th>Tahun</th>
+            <th>Harga Sewa</th>
+            <th>Aksi</th>
+        </tr>
+    </thead>
+    <tbody id="car-list"></tbody>
+</table>
 
     <h2>Tambah/Edit Mobil</h2>
     <form id="car-form">
@@ -37,22 +37,22 @@
     </form>
 
     <script>
-        async function fetchCars() {
-            const response = await fetch('https://script.google.com/macros/s/AKfycbz-KiHbPKMdRsNueGxWAxqVgVlQlSYYQkn5ectQGoOvxv7fQaJXgGT-4kqF4jzQOQ0/exec?action=read');
-            const cars = await response.json();
-            const carList = document.getElementById('car-list');
-            carList.innerHTML = '';
+    async function fetchCars() {
+        const response = await fetch('URL_GOOGLE_APPS_SCRIPT?action=read');
+        const cars = await response.json();
+        const carList = document.getElementById('car-list');
+        carList.innerHTML = '';
 
-            cars.forEach(car => {
-                const row = document.createElement('tr');
-                row.innerHTML = `<td>${car.name}</td><td>${car.brand}</td><td>${car.year}</td><td>${car.price}</td>
-                                <td>
-                                    <button onclick="editCar(${car.id})">Edit</button>
-                                    <button onclick="deleteCar(${car.id})">Hapus</button>
-                                </td>`;
-                carList.appendChild(row);
-            });
-        }
+        cars.forEach(car => {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td>${car.name}</td><td>${car.brand}</td><td>${car.year}</td><td>${car.price}</td>
+                            <td>
+                                <button data-id="${car.id}" onclick="editCar(this)">Edit</button>
+                                <button data-id="${car.id}" onclick="deleteCar(${car.id})">Hapus</button>
+                            </td>`;
+            carList.appendChild(row);
+        });
+    }
 
         document.getElementById('car-form').addEventListener('submit', async (event) => {
             event.preventDefault();
@@ -76,14 +76,16 @@
             fetchCars();
         }
 
-        function editCar(id) {
-            const row = document.getElementById('car-list').children[id];
-            document.getElementById('car-id').value = id;
-            document.getElementById('car-name').value = row.children[0].innerText;
-            document.getElementById('car-brand').value = row.children[1].innerText;
-            document.getElementById('car-year').value = row.children[2].innerText;
-            document.getElementById('car-price').value = row.children[3].innerText;
-        }
+    function editCar(button) {
+        const id = button.getAttribute('data-id');
+        const row = document.getElementById('car-list').children[id];
+        
+        document.getElementById('car-id').value = id;
+        document.getElementById('car-name').value = row.children[0].innerText;
+        document.getElementById('car-brand').value = row.children[1].innerText;
+        document.getElementById('car-year').value = row.children[2].innerText;
+        document.getElementById('car-price').value = row.children[3].innerText;
+    }
 
         fetchCars();
     </script>
