@@ -56,15 +56,21 @@
         table {
             width: 100%;
             border-collapse: collapse;
+            margin-top: 10px;
         }
 
         th, td {
             border: 1px solid #ddd;
-            padding: 8px;
+            padding: 12px 8px;
             text-align: left;
         }
 
         th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        tr:nth-child(even) {
             background-color: #f2f2f2;
         }
 
@@ -72,6 +78,22 @@
             display: none;
             text-align: center;
             margin: 20px 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .error {
+            color: red;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-style: italic;
         }
     </style>
 </head>
@@ -87,12 +109,12 @@
 
             <div class="form-group">
                 <label for="ktp">Nomor KTP:</label>
-                <input type="text" id="ktp" required>
+                <input type="text" id="ktp" pattern="[0-9]{16}" title="Masukkan 16 digit nomor KTP" required>
             </div>
 
             <div class="form-group">
                 <label for="telepon">Nomor Telepon:</label>
-                <input type="tel" id="telepon" required>
+                <input type="tel" id="telepon" pattern="[0-9]{10,13}" title="Masukkan nomor telepon yang valid" required>
             </div>
 
             <div class="form-group">
@@ -118,7 +140,9 @@
             <button type="submit">Submit Rental</button>
         </form>
 
-        <div class="loading" id="loading">Loading...</div>
+        <div class="loading" id="loading">
+            <p>Memuat data...</p>
+        </div>
 
         <div class="table-container">
             <h3>Daftar Penyewaan</h3>
@@ -144,19 +168,56 @@
         // Replace with your Google Apps Script URL
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz-KiHbPKMdRsNueGxWAxqVgVlQlSYYQkn5ectQGoOvxv7fQaJXgGT-4kqF4jzQOQ0/exec';
 
+        // Format date to dd/mm/yyyy
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('id-ID', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+        }
+
+        // Validate dates
+        function validateDates(startDate, endDate) {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (start < today) {
+                return "Tanggal mulai tidak boleh kurang dari hari ini";
+            }
+            if (end < start) {
+                return "Tanggal selesai harus lebih besar dari tanggal mulai";
+            }
+            return "";
+        }
+
         document.getElementById('rentalForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const loading = document.getElementById('loading');
+            const tanggalMulai = document.getElementById('tanggalMulai').value;
+            const tanggalSelesai = document.getElementById('tanggalSelesai').value;
+
+            // Validate dates
+            const dateError = validateDates(tanggalMulai, tanggalSelesai);
+            if (dateError) {
+                alert(dateError);
+                return;
+            }
+
             loading.style.display = 'block';
 
             const formData = {
-                nama: document.getElementById('nama').value,
-                ktp: document.getElementById('ktp').value,
-                telepon: document.getElementById('telepon').value,
+                nama: document.getElementById('nama').value.trim(),
+                ktp: document.getElementById('ktp').value.trim(),
+                telepon: document.getElementById('telepon').value.trim(),
                 kendaraan: document.getElementById('kendaraan').value,
-                tanggalMulai: document.getElementById('tanggalMulai').value,
-                tanggalSelesai: document.getElementById('tanggalSelesai').value
+                tanggalMulai: tanggalMulai,
+                tanggalSelesai: tanggalSelesai
             };
 
             try {
@@ -182,34 +243,56 @@
 
         async function loadRentalData() {
             const loading = document.getElementById('loading');
+            const tbody = document.getElementById('rentalList');
             loading.style.display = 'block';
+            tbody.innerHTML = '';
 
             try {
                 const response = await fetch(SCRIPT_URL);
                 const data = await response.json();
                 
-                const tbody = document.getElementById('rentalList');
-                tbody.innerHTML = '';
-
-                data.forEach(rental => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${rental.nama}</td>
-                        <td>${rental.ktp}</td>
-                        <td>${rental.telepon}</td>
-                        <td>${rental.kendaraan}</td>
-                        <td>${rental.tanggalMulai}</td>
-                        <td>${rental.tanggalSelesai}</td>
+                if (data && data.length > 0) {
+                    data.forEach(rental => {
+                        if (rental.nama) { // Only create row if data is valid
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${rental.nama || '-'}</td>
+                                <td>${rental.ktp || '-'}</td>
+                                <td>${rental.telepon || '-'}</td>
+                                <td>${rental.kendaraan || '-'}</td>
+                                <td>${formatDate(rental.tanggalMulai)}</td>
+                                <td>${formatDate(rental.tanggalSelesai)}</td>
+                            `;
+                            tbody.appendChild(row);
+                        }
+                    });
+                } else {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="empty-message">
+                                Belum ada data penyewaan
+                            </td>
+                        </tr>
                     `;
-                    tbody.appendChild(row);
-                });
+                }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Terjadi kesalahan saat memuat data');
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="empty-message">
+                            Terjadi kesalahan saat memuat data
+                        </td>
+                    </tr>
+                `;
             } finally {
                 loading.style.display = 'none';
             }
         }
+
+        // Set minimum date for date inputs
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('tanggalMulai').min = today;
+        document.getElementById('tanggalSelesai').min = today;
 
         // Load initial data
         loadRentalData();
